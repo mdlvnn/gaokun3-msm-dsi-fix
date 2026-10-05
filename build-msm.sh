@@ -2,9 +2,10 @@
 # Rebuild msm.ko for linux-gaokun3 with the dsi_phy_7nm PLL-enable-count rework reverted.
 # Run ON THE TABLET (native arm64, needs: gcc make bc pahole flex bison python3 perl patch curl).
 #
-#   ./build-msm.sh              # build for the installed kernel (pacman -Q linux-gaokun3)
-#   ./build-msm.sh 7.2.9        # build for a specific version (its linux-gaokun3-headers must be installed)
-#   ./build-msm.sh 7.2.9 --install   # build and install (needs sudo): replaces msm.ko, depmod, mkinitcpio
+#   ./build-msm.sh                   # build for the installed kernel (pacman -Q linux-gaokun3)
+#   ./build-msm.sh 7.2.9             # build for a specific version (its linux-gaokun3-headers must be installed)
+#   ./build-msm.sh --install         # build for the installed kernel and install it (needs sudo)
+#   ./build-msm.sh 7.2.9 --install   # same for a specific version; replaces msm.ko, depmod, mkinitcpio
 #
 # What it does:
 #   1. copies the installed kernel build tree (/usr/lib/modules/<ver>-gaokun3/build) to a work dir
@@ -14,8 +15,15 @@
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
-V=${1:-$(pacman -Q linux-gaokun3 | awk '{print $2}' | cut -d- -f1)}
-INSTALL=${2:-}
+V=; INSTALL=
+for a in "$@"; do
+  case "$a" in
+    --install) INSTALL=--install ;;
+    -*) echo "unknown option: $a"; exit 1 ;;
+    *) V=$a ;;
+  esac
+done
+V=${V:-$(pacman -Q linux-gaokun3 | awk '{print $2}' | cut -d- -f1)}
 KREL=$V-gaokun3
 W=${W:-$HOME/work-msm-$V}
 BUILD_SRC=/usr/lib/modules/$KREL/build
